@@ -6,6 +6,7 @@
   "scripts": {
     "watch": "babel -w src/ -d dist/",
     "build": "babel src/ -d dist/",
+    "postinstall": "babel src/ -d dist/",
     "serve": "babel -w src/ -d dist/ | nodemon --watch dist",
     "start": "node dist/index.js"
   },
@@ -13,6 +14,9 @@
     "express": "^4.14.0",
     "body-parser": "^1.13.3",
     "mongodb": "^2.2"
+  },
+  "engines": {
+    "node": "4.1.1"
   },
   "devDependencies": {
     "babel": "^6.5.2",

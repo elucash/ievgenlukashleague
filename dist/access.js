@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -11,14 +11,14 @@ var db = void 0,
 
 exports.default = {
   get db() {
-    if (!db) throw new Error("'db' is not initialized yet");
+    if (!db) throw new Error('"db" is not initialized yet');
     return db;
   },
   set db(v) {
     db = v;
   },
   get app() {
-    if (!app) throw new Error("'app' is not initialized yet");
+    if (!app) throw new Error('"app" is not initialized yet');
     return app;
   },
   set app(v) {

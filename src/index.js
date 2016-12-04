@@ -1,7 +1,10 @@
-import express from "express"
-import mongodb from "mongodb"
-import bodyParser from "body-parser"
-import access from "./access"
+import express from 'express'
+import mongodb from 'mongodb'
+import bodyParser from 'body-parser'
+import access from './access'
+
+const appPort = process.env.PORT || 8080
+const dbUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/test'
 
 // For the sake of simplicity, we'll try to connect to the database
 // and only when connection will succeed, there will be call to init
@@ -19,26 +22,26 @@ function initApp() {
   // registering routes on the app,
   // we doing this lazily to make sure any modules referenced
   // from route.js will be able to observe 'access {app, db}' already initialized
-  // having to use ["default"] is es6/babel quirk
-  require("./route")["default"](app)
+  // having to use ['default'] is an es6/babel quirk
+  require('./route')['default'](app)
 
-  var server = app.listen(process.env.PORT || 8080, () => {
+  var server = app.listen(appPort, () => {
     console.log(`running app on port: ${server.address().port}`)
   })
 }
 
 function initDatabase() {
-  const url = process.env.MONGODB_URI || 'mongodb://localhost:27017'
-  mongodb.MongoClient.connect(url, (err, db) => {
+  mongodb.MongoClient.connect(dbUri, (err, db) => {
     if (err) {
-      console.error(`Cannot connect to mongodb using url: ${url}`)
+      console.error(`Cannot connect to mongodb: ${dbUri}`)
       process.exit(1)
     }
     access.db = db
-    console.log(`Connection to mongodb established: ${url}`)
+    console.log(`Connection to mongodb established: ${dbUri}`)
 
     initApp()
   })
 }
 
+//starting init sequence
 initDatabase()

@@ -1,6 +1,5 @@
 import express from 'express'
 import mongodb from 'mongodb'
-import bodyParser from 'body-parser'
 import access from './access'
 
 const appPort = process.env.PORT || 8080
@@ -16,8 +15,6 @@ const dbUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/test'
 function initApp() {
   let app = express()
   access.app = app
-
-  app.use(bodyParser.json())
 
   // registering routes on the app,
   // we doing this lazily to make sure any modules referenced

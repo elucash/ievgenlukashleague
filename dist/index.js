@@ -8,10 +8,6 @@ var _mongodb = require('mongodb');
 
 var _mongodb2 = _interopRequireDefault(_mongodb);
 
-var _bodyParser = require('body-parser');
-
-var _bodyParser2 = _interopRequireDefault(_bodyParser);
-
 var _access = require('./access');
 
 var _access2 = _interopRequireDefault(_access);
@@ -31,8 +27,6 @@ var dbUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/test';
 function initApp() {
   var app = (0, _express2.default)();
   _access2.default.app = app;
-
-  app.use(_bodyParser2.default.json());
 
   // registering routes on the app,
   // we doing this lazily to make sure any modules referenced

@@ -38,7 +38,7 @@ function create(email) {
     email: email,
     at: new Date()
   }).then(function () {
-    return _id;
+    return { sessionKey: _id.toString() };
   });
 }
 

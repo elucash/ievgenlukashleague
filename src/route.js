@@ -1,15 +1,24 @@
+import bodyParser from 'body-parser'
 import * as users from './users'
 import * as session from './session'
+import * as profile from './profile'
 
 export default function(app) {
+  app.use(bodyParser.json())
+  app.use(httpsOnly)
+
   app.get('/', (req, res) => {
-    res.send('Hello World')
+    res.send('Kinda dating app API')
   })
 
-  app.get('/session', (req, res) => {
-    session.create()
+  app.post('/signup', (req, res) => {
+    users.signup(req.body)
       .then(sendContent(res))
       .catch(sendError(res))
+  })
+
+  app.get('/me', loggedIn, (req, res) => {
+    sendContent(res)(req.user)
   })
 
   app.get('/sessions', (req, res) => {
@@ -18,8 +27,10 @@ export default function(app) {
       .catch(sendError(res))
   })
 
-  app.get('/me', loggedIn, (req, res) => {
-    sendContent(res)(req.user)
+  app.get('/matches', loggedIn, (req, res) => {
+    profile.matches(req.user, req.query.limit)
+      .then(sendContent(res))
+      .catch(sendError(res))
   })
 
   app.post('/login', (req, res) => {
@@ -33,28 +44,6 @@ export default function(app) {
       .then(sendContent(res))
       .catch(sendError(res))
   })
-
-  app.post('/signup', (req, res) => {
-    let r = req.body
-
-  })
-}
-
-function sendError(res) {
-  return err => {
-    let message = err.message || err + ''
-
-    res.status(500).send({
-      err: message
-    })
-  }
-}
-
-function sendContent(res, formatFn) {
-  formatFn = formatFn || (obj => obj)
-  return v => {
-    res.status(200).send(formatFn(v))
-  }
 }
 
 /**
@@ -71,4 +60,43 @@ function loggedIn(req, res, next) {
       next()
     })
     .catch(sendError(res))
+}
+
+let errorStatuseCodes = {
+  badrequest: 400,
+  noaccess: 401,
+  notfound: 404,
+  error: 500
+}
+
+function sendError(res) {
+  return err => {
+    let message = err.message || err + ''
+    res.status(statusCodeFor(message)).send({
+      err: message,
+      violations: err.violations
+    })
+  }
+  function statusCodeFor(message) {
+    let [errorTag] = message.split(/\:/,)
+    return errorStatuseCodes[errorTag] || errorStatuseCodes.error
+  }
+}
+
+function sendContent(res, formatFn) {
+  formatFn = formatFn || (obj => obj)
+  return v => {
+    res.status(200).send(formatFn(v))
+  }
+}
+
+function httpsOnly(req, res, next) {
+  let originalProtocol = req.get('X-Forwarded-Proto')
+  // only check if header is present, i.e. behind reverse proxy
+  if (originalProtocol && originalProtocol != 'https') {
+    // maybe redirect would be better, but anyway
+    res.status(403).send({err: 'Only https requests are allowed'})
+  } else {
+    next()
+  }
 }

@@ -22,7 +22,7 @@ export function create(email) {
       email,
       at: new Date()
     })
-    .then(() => _id)
+    .then(() => ({sessionKey: _id.toString() }))
 }
 
 export function get(key) {

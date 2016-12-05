@@ -2,13 +2,14 @@
 // but rather is a sketch or an imitation
 // of security concerns. Proper salt and bcrypt
 // (or what is fashionable nowadays) would be better
+import crypto from 'crypto'
 
 const GLOBAL_SALT = 'CAFEBABEDEADBEEFCAFEBABEDEADBEEF'
 
 function sha512(plaintext) {
-  var hash = crypto.createHmac('sha512', GLOBAL_SALT)
-  hash.update(plaintext)
-  return hash.digest('hex')
+  var h = crypto.createHmac('sha512', GLOBAL_SALT)
+  h.update(plaintext)
+  return h.digest('hex')
 }
 
 export function hash(email, password) {

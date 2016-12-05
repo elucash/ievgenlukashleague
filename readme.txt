@@ -1,16 +1,10 @@
-#!/bin/bash
+# API Call examples
 
-server='http://localhost:8080'
+# Assuming server variable
 
-# server='https://ievgenlukashleague.herokuapp.com'
+server='https://ievgenlukashleague.herokuapp.com'
 
-curl $server
-
-echo ""
-#curl $server/fakedata -X 'POST' -d ''
-#sleep 3
-
-echo ""
+# Creating user, registering profile
 
 curl $server/signup -X 'POST' -H 'Content-Type: application/json' -d @- <<EOF
 {
@@ -26,13 +20,15 @@ curl $server/signup -X 'POST' -H 'Content-Type: application/json' -d @- <<EOF
 }
 EOF
 
+# Creating another user
 curl $server/signup -X 'POST' -H 'Content-Type: application/json' -d @- <<EOF
 {
   "email" : "email4@gmail.com",
-  "password" : "badobra",
+  "password" : "hocuspocus",
   "profile" : {
     "age": 20,
-    "gender": "F"
+    "gender": "F",
+    "religion": "A"
   },
   "preference" : {
     "age": [18, 27],
@@ -41,25 +37,21 @@ curl $server/signup -X 'POST' -H 'Content-Type: application/json' -d @- <<EOF
 }
 EOF
 
-echo ""
-
+# Signing in as email3@gmail.com
 curl $server/login -X 'POST' -H 'Content-Type: application/json' -d @- <<EOF
 {
   "email" : "email3@gmail.com",
   "password" : "abracadabra"
 }
-EOF
 
-# Use session returned as text from previous /login call
+# Plaintext output is the session id
 session="5844e25de0492056007dfc9d"
 
-echo ""
-
+# Display my profile
 curl $server/me -H "Session-Key: $session"
 
-echo ""
-echo "matches"
-
+# Display at most five matches to review (non viewed yet)
 curl $server/matches -H "Session-Key: $session"
 
-echo ""
+# Add load some fake data, executes asynchronously
+curl $server/fakedata -X 'POST' -d ''

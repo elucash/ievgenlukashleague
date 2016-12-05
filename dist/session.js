@@ -5,7 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.create = create;
 exports.get = get;
-exports.all = all;
 
 var _access = require('./access');
 
@@ -20,6 +19,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // Decided to not mess with cookies and provide quite
 // explicit session handling using expiring database
 // storage and explicit passing of the session key
+
+// Properly encrypted cookies could be better alternative
+// for storing expiring sessions to avoid DB lookups
 var TTL_SEC = 60;
 
 var session = _access2.default.db.collection('session');
@@ -27,9 +29,7 @@ var session = _access2.default.db.collection('session');
 // ensure TTL index is created on session
 session.ensureIndex({ at: 1 }, { expireAfterSeconds: TTL_SEC });
 
-/**
- * Create new session
- */
+/** Create new session */
 function create(email) {
   // cryptographically strong psedorandom key would be better
   var _id = new _mongodb2.default.ObjectID();
@@ -38,10 +38,11 @@ function create(email) {
     email: email,
     at: new Date()
   }).then(function () {
-    return { sessionKey: _id.toString() };
+    return _id.toString();
   });
 }
 
+/** Get session by key */
 function get(key) {
   try {
     key = _mongodb2.default.ObjectID(key);
@@ -51,15 +52,5 @@ function get(key) {
   return session.findOne({ _id: key }).then(function (s) {
     if (!s) throw new Error('noaccess: no such session');
     return s.email;
-  });
-}
-
-/**
- * Auxiliary query for all sessions
- */
-function all() {
-  return session.find({}).toArray().then(function (res) {
-    console.log(res);
-    return res;
   });
 }

@@ -4,40 +4,76 @@ import access from './access'
 let users = access.db.collection('users')
 
 const DEFAULT_MATCHES_LIMIT = 5
+const MIN_AGE = 0
+const MAX_AGE = 200 // haha
+const REVIEW_LIKE = 1
+const REVIEW_REJECT = -1
 
-// Compound index for more or less
-// efficient matching searches
+// Compound index for more efficient matching searches
 users.ensureIndex({
   'profile.age': 1,
   'profile.religion': 1,
   'profile.gender': 1,
-  _id: 1, // planning to use _id for exclusion of liked/rejected once
+  _id: 1, // use _id for exclusion of reviewed (liked/rejected)
 }, {
-  name: 'match'
+  name: 'match' // just as paranoia I'll reference it by using a hint
 })
 
+
+// Scalability notes: It is better create background job to precompute
+// potential matches with more detailed checks. However here we just attempting
 export function matches(user, limit) {
   limit = limit || DEFAULT_MATCHES_LIMIT
 
-  let query = {}
-  adjustMatchQuery(query, user.preference, user.reviewed)
-  users.find(query).limit(limit)
+  let options = {hint: 'match', fields: {password: 0, reviewed: 0}}
+  let query = buildMatchQuery(user.preference, user.reviewed)
+
+  return new Promise((resolve, reject) => {
+    let results = []
+
+    // Cursor here instead of limit().toArray()
+    // because we're not sure if all 5 (limit) will match us
+    // via reverse preference check
+    // default batchSize makes streaming more or less efficient
+    let cursor = users.find(query, options)
+    cursor.each((err, potentialCandidate) => {
+      if (err) {
+        reject(err)
+        return
+      }
+      if (!potentialCandidate || results.length >= limit) {
+        // no new results or enough results
+        cursor.close()
+        resolve(results)
+        return
+      }
+
+      // here we check for other's user preference
+      // to determine if we are a
+      // currently, there is no check if we were rejected by other user
+      if (matchesPreference(user.profile, potentialCandidate.preference)) {
+        results.push(potentialCandidate)
+      }
+    })
+  })
 }
 
-function adjustMatchQuery(query, preference, reviewed) {
+function buildMatchQuery(preference, reviewed) {
+  let query = {}
   if (preference.age) {
     let [min, max] = preference.age
-    query.age = { $gte: min, $lte: max }
+    query['profile.age'] = { $gte: min, $lte: max }
   }
   if (preference.religion) {
-    query.religion = preference.religion
+    query['profile.religion'] = preference.religion
   }
   if (preference.gender) {
-    query.gender = preference.gender
+    query['profile.gender'] = preference.gender
   }
-  if (reviewed) {
+  if (reviewed && reviewed.length) {
     query._id = { $nin: Object.keys(reviewed) }
   }
+  return query
 }
 
 /**
@@ -56,6 +92,14 @@ function matchesPreference(profile, preference) {
     if (profile.gender != preference.gender) return false
   }
   return true
+}
+
+export function review(user, review) {
+  // TODO Reviews are incomplete,
+  // basically idea to insert valid review values REVIEW_LIKE, REVIEW_REJECT
+  // {
+  //
+  //}
 }
 
 export function validate(user) {
@@ -94,11 +138,8 @@ function validations() {
       let [min, max] = range
       if (typeof min != 'number' || typeof max != 'number') {
         violations.push(description + ' bounds are not [min, max] numbers')
-      } else {
-        // ha-ha, 200 seems like a an age )
-        if (min < 0 || max > 200 || min > max) {
-          violations.push(description + ' bounds are out of range 0 <= min <= max <= 200 numbers')
-        }
+      } else if (min < MIN_AGE || max > MAX_AGE || min > max) {
+        violations.push(description + ' bounds are out of range 0 <= min <= max <= 200 numbers')
       }
     }
   }
@@ -114,7 +155,7 @@ function validations() {
     if (typeof value != 'number') {
       violations.push(description + ' is required as a number')
     }
-    if (value < 0 || value > 200) {
+    if (value < MIN_AGE || value > MAX_AGE) {
       violations.push(description + ' is out of range 0 <= value <= 200')
     }
   }

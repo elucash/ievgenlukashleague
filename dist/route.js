@@ -6,6 +6,10 @@ Object.defineProperty(exports, "__esModule", {
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
+// Simple http api
+// the api not quite RESTy (no PUTs etc)
+
+
 exports.default = function (app) {
   app.use(_bodyParser2.default.json());
   app.use(httpsOnly);
@@ -22,12 +26,13 @@ exports.default = function (app) {
     sendContent(res)(req.user);
   });
 
-  app.get('/sessions', function (req, res) {
-    session.all().then(sendContent(res)).catch(sendError(res));
-  });
-
   app.get('/matches', loggedIn, function (req, res) {
     profile.matches(req.user, req.query.limit).then(sendContent(res)).catch(sendError(res));
+  });
+
+  app.post('/reviews', loggedIn, function (req, res) {
+    // TODO review insertion is not implemented
+    profile.review(req.user, req.body).then(sendContent(res)).catch(sendError(res));
   });
 
   app.post('/login', function (req, res) {
@@ -41,6 +46,12 @@ exports.default = function (app) {
     }
 
     users.login(email, password).then(sendContent(res)).catch(sendError(res));
+  });
+
+  // auxiliary
+  app.post('/fakedata', function (req, res) {
+    fakedata.populateUsers();
+    res.send('Started populating with fake data');
   });
 };
 
@@ -60,12 +71,16 @@ var _profile = require('./profile');
 
 var profile = _interopRequireWildcard(_profile);
 
+var _fakedata = require('./fakedata');
+
+var fakedata = _interopRequireWildcard(_fakedata);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
- * Middleware for checking and loading our session user
+ * Middleware for checking and loading session user
  */
 function loggedIn(req, res, next) {
   var sessionKey = req.get('Session-Key') || req.query.sessionKey;

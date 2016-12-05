@@ -2,7 +2,10 @@ import bodyParser from 'body-parser'
 import * as users from './users'
 import * as session from './session'
 import * as profile from './profile'
+import * as fakedata from './fakedata'
 
+// Simple http api
+// the api not quite RESTy (no PUTs etc)
 export default function(app) {
   app.use(bodyParser.json())
   app.use(httpsOnly)
@@ -21,14 +24,15 @@ export default function(app) {
     sendContent(res)(req.user)
   })
 
-  app.get('/sessions', (req, res) => {
-    session.all()
+  app.get('/matches', loggedIn, (req, res) => {
+    profile.matches(req.user, req.query.limit)
       .then(sendContent(res))
       .catch(sendError(res))
   })
 
-  app.get('/matches', loggedIn, (req, res) => {
-    profile.matches(req.user, req.query.limit)
+  app.post('/reviews', loggedIn, (req, res) => {
+    // TODO review insertion is not implemented
+    profile.review(req.user, req.body)
       .then(sendContent(res))
       .catch(sendError(res))
   })
@@ -44,10 +48,16 @@ export default function(app) {
       .then(sendContent(res))
       .catch(sendError(res))
   })
+
+  // auxiliary
+  app.post('/fakedata', (req, res) => {
+    fakedata.populateUsers()
+    res.send('Started populating with fake data')
+  })
 }
 
 /**
- * Middleware for checking and loading our session user
+ * Middleware for checking and loading session user
  */
 function loggedIn(req, res, next) {
   let sessionKey = req.get('Session-Key') || req.query.sessionKey

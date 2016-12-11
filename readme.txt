@@ -2,7 +2,7 @@
 
 # Assuming server variable
 
-server='https://ievgenlukashleague.herokuapp.com'
+server='https://localhost:8080'
 
 # Creating user, registering profile
 
